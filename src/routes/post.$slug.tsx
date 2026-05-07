@@ -6,6 +6,7 @@ import { Clock, Eye, ThumbsUp, ThumbsDown, Share2, ArrowLeft } from "lucide-reac
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { AdSlot } from "@/components/AdSlot";
 import { fetchPostBySlug } from "@/lib/posts";
 import { categoryLabel } from "@/lib/categories";
 
