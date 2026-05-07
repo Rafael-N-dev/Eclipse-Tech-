@@ -55,7 +55,7 @@ export function Footer() {
           <Link to="/contato" className="hover:text-neon">Contato</Link>
           <Link to="/privacidade" className="hover:text-neon">Política de Privacidade</Link>
         </div>
-        © {new Date().getFullYear()} Eclipse Tech. Todos os direitos reservados.
+        <span>© 2026 Eclipse Tech. Todos os direitos reservados.</span>
       </div>
     </footer>
   );

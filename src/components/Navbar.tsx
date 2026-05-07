@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, User, Shield } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/eclipse-logo.png";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
   return (
     <header className="glass sticky top-0 z-50">
@@ -44,6 +46,22 @@ export function Navbar() {
           >
             <Search className="h-4 w-4" />
           </button>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              aria-label="Admin"
+              className="rounded-md p-2 text-neon transition-colors hover:bg-accent"
+            >
+              <Shield className="h-4 w-4" />
+            </Link>
+          )}
+          <Link
+            to={user ? "/admin" : "/auth"}
+            aria-label="Conta"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <User className="h-4 w-4" />
+          </Link>
           <button
             aria-label="Menu"
             onClick={() => setOpen((v) => !v)}
