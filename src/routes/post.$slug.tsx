@@ -50,8 +50,13 @@ function PostPage() {
     <div className="min-h-screen">
       <Navbar />
 
-      <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <Link
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+        <AdSlot variant="horizontal" label="Anúncio" />
+      </div>
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_300px]">
+        <article className="min-w-0">
+          <Link
           to="/"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-neon"
         >
@@ -138,6 +143,19 @@ function PostPage() {
           </p>
         </div>
       </article>
+
+        <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
+          <AdSlot variant="sidebar" label="Publicidade" />
+          <div className="rounded-xl border border-border/60 bg-card p-5">
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-neon">
+              Newsletter
+            </h4>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Receba os melhores artigos da semana no seu e-mail.
+            </p>
+          </div>
+        </aside>
+      </div>
 
       <Footer />
     </div>
