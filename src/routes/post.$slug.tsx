@@ -92,7 +92,7 @@ function PostPage() {
           </div>
         )}
 
-        <div className="prose prose-invert mt-10 max-w-none prose-headings:font-display prose-headings:tracking-tight prose-h2:text-2xl prose-a:text-neon prose-strong:text-foreground prose-blockquote:border-l-neon prose-blockquote:text-muted-foreground">
+        <div className="mt-10 space-y-5 text-base leading-relaxed text-foreground/90 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_strong]:text-neon [&_a]:text-neon [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-neon [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:my-1 [&_code]:rounded [&_code]:bg-surface [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm [&_code]:text-neon">
           <ReactMarkdown>{post.content}</ReactMarkdown>
         </div>
 
