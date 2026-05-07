@@ -14,10 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      posts: {
+        Row: {
+          api_key: string | null
+          category: string
+          content: string
+          cover_image: string | null
+          created_at: string
+          dislikes: number
+          excerpt: string | null
+          featured: boolean
+          id: string
+          likes: number
+          published: boolean
+          reading_time: number
+          slug: string
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          api_key?: string | null
+          category?: string
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          dislikes?: number
+          excerpt?: string | null
+          featured?: boolean
+          id?: string
+          likes?: number
+          published?: boolean
+          reading_time?: number
+          slug: string
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          api_key?: string | null
+          category?: string
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          dislikes?: number
+          excerpt?: string | null
+          featured?: boolean
+          id?: string
+          likes?: number
+          published?: boolean
+          reading_time?: number
+          slug?: string
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      posts_public_view: {
+        Row: {
+          category: string | null
+          content: string | null
+          cover_image: string | null
+          created_at: string | null
+          dislikes: number | null
+          excerpt: string | null
+          featured: boolean | null
+          id: string | null
+          likes: number | null
+          published: boolean | null
+          reading_time: number | null
+          slug: string | null
+          title: string | null
+          updated_at: string | null
+          views: number | null
+        }
+        Insert: {
+          category?: string | null
+          content?: string | null
+          cover_image?: string | null
+          created_at?: string | null
+          dislikes?: number | null
+          excerpt?: string | null
+          featured?: boolean | null
+          id?: string | null
+          likes?: number | null
+          published?: boolean | null
+          reading_time?: number | null
+          slug?: string | null
+          title?: string | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string | null
+          cover_image?: string | null
+          created_at?: string | null
+          dislikes?: number | null
+          excerpt?: string | null
+          featured?: boolean | null
+          id?: string | null
+          likes?: number | null
+          published?: boolean | null
+          reading_time?: number | null
+          slug?: string | null
+          title?: string | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
