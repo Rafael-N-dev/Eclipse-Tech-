@@ -16,7 +16,6 @@ export type Database = {
     Tables: {
       posts: {
         Row: {
-          api_key: string | null
           category: string
           content: string
           cover_image: string | null
@@ -34,7 +33,6 @@ export type Database = {
           views: number
         }
         Insert: {
-          api_key?: string | null
           category?: string
           content?: string
           cover_image?: string | null
@@ -52,7 +50,6 @@ export type Database = {
           views?: number
         }
         Update: {
-          api_key?: string | null
           category?: string
           content?: string
           cover_image?: string | null
