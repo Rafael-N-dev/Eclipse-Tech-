@@ -35,6 +35,7 @@ export interface PostFormValues {
 
 export function PostForm({ initial }: { initial?: PostFormValues }) {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [v, setV] = useState<PostFormValues>(
     initial ?? {
       title: "", slug: "", excerpt: "", content: "", cover_image: "",
