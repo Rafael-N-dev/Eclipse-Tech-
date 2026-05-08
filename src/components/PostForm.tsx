@@ -59,6 +59,10 @@ export function PostForm({ initial }: { initial?: PostFormValues }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!isAdmin) {
+      setError("Acesso negado: você precisa ser administrador.");
+      return;
+    }
     const parsed = schema.safeParse(v);
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
