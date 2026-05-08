@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORIES } from "@/lib/categories";
+import { useAuth } from "@/hooks/useAuth";
 
 const schema = z.object({
   title: z.string().trim().min(3).max(200),
