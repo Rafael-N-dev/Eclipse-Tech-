@@ -7,43 +7,50 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function fetchRole(uid: string | null) {
+      if (!uid) {
+        if (!cancelled) {
+          setIsAdmin(false);
+          setRoleLoading(false);
+        }
+        return;
+      }
+      setRoleLoading(true);
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!cancelled) {
+        setIsAdmin(!!data);
+        setRoleLoading(false);
+      }
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        setTimeout(() => {
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", s.user.id)
-            .eq("role", "admin")
-            .maybeSingle()
-            .then(({ data }) => setIsAdmin(!!data));
-        }, 0);
-      } else {
-        setIsAdmin(false);
-      }
+      setTimeout(() => fetchRole(s?.user?.id ?? null), 0);
     });
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
-      if (s?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", s.user.id)
-          .eq("role", "admin")
-          .maybeSingle()
-          .then(({ data }) => setIsAdmin(!!data));
-      }
+      fetchRole(s?.user?.id ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  return { session, user, isAdmin, loading };
+  return { session, user, isAdmin, loading, roleLoading };
 }
