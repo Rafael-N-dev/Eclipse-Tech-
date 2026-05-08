@@ -11,18 +11,18 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, roleLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
 
-  if (loading) {
+  if (loading || (user && roleLoading)) {
     return (
       <div className="min-h-screen">
         <Navbar />
-        <p className="p-8 text-muted-foreground">Carregando...</p>
+        <p className="p-8 text-muted-foreground">Verificando permissões...</p>
       </div>
     );
   }
