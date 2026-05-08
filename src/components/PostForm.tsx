@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORIES } from "@/lib/categories";
+import { useAuth } from "@/hooks/useAuth";
 
 const schema = z.object({
   title: z.string().trim().min(3).max(200),
@@ -34,6 +35,7 @@ export interface PostFormValues {
 
 export function PostForm({ initial }: { initial?: PostFormValues }) {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [v, setV] = useState<PostFormValues>(
     initial ?? {
       title: "", slug: "", excerpt: "", content: "", cover_image: "",
@@ -57,6 +59,10 @@ export function PostForm({ initial }: { initial?: PostFormValues }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!isAdmin) {
+      setError("Acesso negado: você precisa ser administrador.");
+      return;
+    }
     const parsed = schema.safeParse(v);
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);

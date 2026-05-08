@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminPostsList,
@@ -20,6 +21,7 @@ interface Row {
 }
 
 function AdminPostsList() {
+  const { isAdmin } = useAuth();
   const [posts, setPosts] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,11 +38,13 @@ function AdminPostsList() {
   useEffect(() => { load(); }, []);
 
   async function togglePublished(p: Row) {
+    if (!isAdmin) return;
     await supabase.from("posts").update({ published: !p.published }).eq("id", p.id);
     load();
   }
 
   async function remove(id: string) {
+    if (!isAdmin) return;
     if (!confirm("Excluir este post?")) return;
     await supabase.from("posts").delete().eq("id", id);
     load();
