@@ -20,6 +20,7 @@ import { Route as PostSlugRouteImport } from './routes/post.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as AdminEditIdRouteImport } from './routes/admin.edit.$id'
+import { Route as ApiPublicHooksDailyPostRouteImport } from './routes/api/public/hooks/daily-post'
 
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
@@ -76,6 +77,11 @@ const AdminEditIdRoute = AdminEditIdRouteImport.update({
   path: '/edit/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicHooksDailyPostRoute = ApiPublicHooksDailyPostRouteImport.update({
+  id: '/api/public/hooks/daily-post',
+  path: '/api/public/hooks/daily-post',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/post/$slug': typeof PostSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/edit/$id': typeof AdminEditIdRoute
+  '/api/public/hooks/daily-post': typeof ApiPublicHooksDailyPostRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/post/$slug': typeof PostSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/edit/$id': typeof AdminEditIdRoute
+  '/api/public/hooks/daily-post': typeof ApiPublicHooksDailyPostRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/post/$slug': typeof PostSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/edit/$id': typeof AdminEditIdRoute
+  '/api/public/hooks/daily-post': typeof ApiPublicHooksDailyPostRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/post/$slug'
     | '/admin/'
     | '/admin/edit/$id'
+    | '/api/public/hooks/daily-post'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/post/$slug'
     | '/admin'
     | '/admin/edit/$id'
+    | '/api/public/hooks/daily-post'
   id:
     | '__root__'
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/post/$slug'
     | '/admin/'
     | '/admin/edit/$id'
+    | '/api/public/hooks/daily-post'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   SobreRoute: typeof SobreRoute
   CSlugRoute: typeof CSlugRoute
   PostSlugRoute: typeof PostSlugRoute
+  ApiPublicHooksDailyPostRoute: typeof ApiPublicHooksDailyPostRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEditIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/hooks/daily-post': {
+      id: '/api/public/hooks/daily-post'
+      path: '/api/public/hooks/daily-post'
+      fullPath: '/api/public/hooks/daily-post'
+      preLoaderRoute: typeof ApiPublicHooksDailyPostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -273,17 +293,8 @@ const rootRouteChildren: RootRouteChildren = {
   SobreRoute: SobreRoute,
   CSlugRoute: CSlugRoute,
   PostSlugRoute: PostSlugRoute,
+  ApiPublicHooksDailyPostRoute: ApiPublicHooksDailyPostRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
