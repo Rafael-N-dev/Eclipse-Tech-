@@ -2,15 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const CATEGORIES = [
-  "curiosidades",
-  "bizarro",
-  "tecnologia",
-  "saude",
-  "entretenimento",
-  "musicas",
-  "series",
-  "bandas",
+  { slug: "series", label: "Séries" },
+  { slug: "tecnologia", label: "Tecnologia" },
+  { slug: "bandas", label: "Bandas de Rock/Metal" },
+  { slug: "filmes", label: "Filmes" },
+  { slug: "animes", label: "Animes" },
+  { slug: "curiosidades", label: "Curiosidades" },
+  { slug: "bizarro", label: "Bizarro" },
 ] as const;
+
+const BUCKET = "post-covers";
 
 function slugify(text: string) {
   return text
@@ -23,14 +24,9 @@ function slugify(text: string) {
     .slice(0, 80);
 }
 
-async function generatePost(category: string) {
+async function aiChat(model: string, messages: any[], extra: Record<string, any> = {}) {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured");
-
-  const systemPrompt = `Você é um redator de blog em português brasileiro. Gere um post original, envolvente e informativo. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
-{"title": string (até 80 chars), "excerpt": string (1-2 frases, até 160 chars), "content": string (markdown, 600-1000 palavras com subtítulos ##), "reading_time": number (minutos, 3-8)}`;
-
-  const userPrompt = `Crie um post de blog inédito da categoria "${category}". Tema variado, atual e curioso. Use markdown com subtítulos. Não inclua o título dentro do content.`;
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -38,22 +34,31 @@ async function generatePost(category: string) {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
+    body: JSON.stringify({ model, messages, ...extra }),
   });
 
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`AI gateway error [${res.status}]: ${txt}`);
   }
+  return res.json();
+}
 
-  const json = await res.json();
+async function generatePost(category: { slug: string; label: string }) {
+  const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
+{"title": string (até 80 chars, chamativo, sem clickbait genérico), "excerpt": string (1-2 frases instigantes, até 160 chars), "content": string (markdown, 600-900 palavras, com 2-3 subtítulos ## e parágrafos curtos), "reading_time": number (3-7), "image_prompt": string (descrição em INGLÊS, vívida e cinematográfica, para gerar uma imagem de capa horizontal 16:9, sem texto na imagem)}`;
+
+  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema atual, curioso ou nostálgico dentro desse universo (pode ser uma série, tecnologia recente, banda lendária, filme cult, anime hypado, curiosidade científica ou um caso bizarro real). Tom humano, descontraído, com personalidade. Não inclua o título dentro do content. O image_prompt deve descrever uma capa visualmente impactante relacionada ao tema.`;
+
+  const json = await aiChat(
+    "google/gemini-2.5-flash",
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    { response_format: { type: "json_object" } }
+  );
+
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new Error("No content from AI");
   return JSON.parse(content) as {
@@ -61,21 +66,73 @@ async function generatePost(category: string) {
     excerpt: string;
     content: string;
     reading_time: number;
+    image_prompt: string;
   };
+}
+
+async function generateCoverImage(prompt: string, slug: string): Promise<string | null> {
+  try {
+    const json = await aiChat(
+      "google/gemini-2.5-flash-image-preview",
+      [
+        {
+          role: "user",
+          content: `Cinematic blog cover image, 16:9, high quality, no text, no watermark. ${prompt}`,
+        },
+      ],
+      { modalities: ["image", "text"] }
+    );
+
+    const dataUrl: string | undefined =
+      json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!dataUrl?.startsWith("data:")) {
+      console.error("No image returned:", JSON.stringify(json).slice(0, 500));
+      return null;
+    }
+
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) return null;
+    const mime = match[1];
+    const ext = mime.split("/")[1].split("+")[0] || "png";
+    const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+
+    const path = `${new Date().getFullYear()}/${slug}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(path, bytes, { contentType: mime, upsert: false });
+    if (upErr) {
+      console.error("Upload error:", upErr.message);
+      return null;
+    }
+    const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  } catch (err) {
+    console.error("Cover image error:", err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 export const Route = createFileRoute("/api/public/hooks/daily-post")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
         try {
+          let preferred: string | undefined;
+          try {
+            const body = await request.json().catch(() => ({}));
+            preferred = body?.category;
+          } catch {}
+
           const category =
+            CATEGORIES.find((c) => c.slug === preferred) ??
             CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
 
           const post = await generatePost(category);
 
           const baseSlug = slugify(post.title) || `post-${Date.now()}`;
           const slug = `${baseSlug}-${Date.now().toString(36)}`;
+
+          const coverUrl = await generateCoverImage(post.image_prompt, baseSlug);
 
           const { data, error } = await supabaseAdmin
             .from("posts")
@@ -84,12 +141,13 @@ export const Route = createFileRoute("/api/public/hooks/daily-post")({
               slug,
               excerpt: post.excerpt?.slice(0, 300) ?? null,
               content: post.content,
-              category,
+              category: category.slug,
+              cover_image: coverUrl,
               reading_time: Math.max(2, Math.min(15, post.reading_time || 4)),
               published: true,
               featured: false,
             })
-            .select("id, slug, title, category")
+            .select("id, slug, title, category, cover_image")
             .single();
 
           if (error) throw error;
