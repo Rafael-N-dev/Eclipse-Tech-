@@ -24,11 +24,7 @@ export function PostCard({ post, index = 0 }: { post: PostCardData; index?: numb
       transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
       className="group relative overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-neon/50 hover:shadow-[0_0_28px_var(--neon-soft)]"
     >
-      <Link
-        to="/post/$slug"
-        params={{ slug: post.slug }}
-        className="block"
-      >
+      <Link to="/post/$slug" params={{ slug: post.slug }} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-surface">
           {post.cover_image && (
             <img

@@ -56,7 +56,7 @@ async function generatePost(category: { slug: string; label: string }) {
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    { response_format: { type: "json_object" } }
+    { response_format: { type: "json_object" } },
   );
 
   const content = json.choices?.[0]?.message?.content;
@@ -80,11 +80,10 @@ async function generateCoverImage(prompt: string, slug: string): Promise<string 
           content: `Cinematic blog cover image, 16:9, high quality, no text, no watermark. ${prompt}`,
         },
       ],
-      { modalities: ["image", "text"] }
+      { modalities: ["image", "text"] },
     );
 
-    const dataUrl: string | undefined =
-      json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const dataUrl: string | undefined = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!dataUrl?.startsWith("data:")) {
       console.error("No image returned:", JSON.stringify(json).slice(0, 500));
       return null;
@@ -156,10 +155,10 @@ export const Route = createFileRoute("/api/public/hooks/daily-post")({
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           console.error("daily-post error:", message);
-          return new Response(
-            JSON.stringify({ success: false, error: message }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ success: false, error: message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },

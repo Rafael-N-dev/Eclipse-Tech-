@@ -51,9 +51,15 @@ export function Footer() {
       </div>
       <div className="border-t border-border/50 px-4 py-4 text-center text-xs text-muted-foreground sm:px-6">
         <div className="mb-2 flex flex-wrap justify-center gap-4">
-          <Link to="/sobre" className="hover:text-neon">Sobre Nós</Link>
-          <Link to="/contato" className="hover:text-neon">Contato</Link>
-          <Link to="/privacidade" className="hover:text-neon">Política de Privacidade</Link>
+          <Link to="/sobre" className="hover:text-neon">
+            Sobre Nós
+          </Link>
+          <Link to="/contato" className="hover:text-neon">
+            Contato
+          </Link>
+          <Link to="/privacidade" className="hover:text-neon">
+            Política de Privacidade
+          </Link>
         </div>
         <span>© 2026 Eclipse Tech. Todos os direitos reservados.</span>
       </div>

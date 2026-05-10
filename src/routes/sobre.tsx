@@ -30,16 +30,16 @@ function SobrePage() {
           Sobre a <span className="text-gradient-neon">Eclipse Tech</span>
         </h1>
         <p className="mt-6 text-lg text-muted-foreground">
-          A Eclipse Tech é um portal de conteúdo viral focado em curiosidades, tecnologia,
-          ciência e cultura pop. Criada em 2026, nossa missão é trazer informação relevante
-          em formato leve, rápido e visualmente moderno.
+          A Eclipse Tech é um portal de conteúdo viral focado em curiosidades, tecnologia, ciência e
+          cultura pop. Criada em 2026, nossa missão é trazer informação relevante em formato leve,
+          rápido e visualmente moderno.
         </p>
 
         <h2 className="mt-10 font-display text-2xl font-bold">Nossa missão</h2>
         <p className="mt-3 text-muted-foreground">
-          Tornar a leitura na internet algo prazeroso novamente. Nada de pop-ups invasivos,
-          nada de manchetes enganosas. Conteúdo direto, com curadoria humana e apoio de
-          inteligência artificial.
+          Tornar a leitura na internet algo prazeroso novamente. Nada de pop-ups invasivos, nada de
+          manchetes enganosas. Conteúdo direto, com curadoria humana e apoio de inteligência
+          artificial.
         </p>
 
         <h2 className="mt-10 font-display text-2xl font-bold">O que publicamos</h2>
@@ -52,8 +52,8 @@ function SobrePage() {
 
         <h2 className="mt-10 font-display text-2xl font-bold">Equipe editorial</h2>
         <p className="mt-3 text-muted-foreground">
-          Somos um time enxuto de jornalistas, designers e desenvolvedores apaixonados por
-          construir uma nova forma de consumir entretenimento online.
+          Somos um time enxuto de jornalistas, designers e desenvolvedores apaixonados por construir
+          uma nova forma de consumir entretenimento online.
         </p>
       </main>
       <Footer />

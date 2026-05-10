@@ -68,10 +68,19 @@ function AdminLayout() {
               <span className="text-gradient-neon">Admin</span>
             </h1>
             <nav className="flex gap-3 text-sm">
-              <Link to="/admin" className="text-muted-foreground hover:text-neon" activeOptions={{ exact: true }} activeProps={{ className: "text-neon" }}>
+              <Link
+                to="/admin"
+                className="text-muted-foreground hover:text-neon"
+                activeOptions={{ exact: true }}
+                activeProps={{ className: "text-neon" }}
+              >
                 Posts
               </Link>
-              <Link to="/admin/new" className="text-muted-foreground hover:text-neon" activeProps={{ className: "text-neon" }}>
+              <Link
+                to="/admin/new"
+                className="text-muted-foreground hover:text-neon"
+                activeProps={{ className: "text-neon" }}
+              >
                 Novo
               </Link>
             </nav>

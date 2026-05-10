@@ -14,11 +14,7 @@ export function TrendingSidebar({ posts }: { posts: PostCardData[] }) {
         <ol className="space-y-4">
           {posts.map((p, i) => (
             <li key={p.id}>
-              <Link
-                to="/post/$slug"
-                params={{ slug: p.slug }}
-                className="group flex gap-3"
-              >
+              <Link to="/post/$slug" params={{ slug: p.slug }} className="group flex gap-3">
                 <span className="font-display text-2xl font-bold text-neon/40 transition-colors group-hover:text-neon">
                   0{i + 1}
                 </span>

@@ -13,21 +13,29 @@ function EditPost() {
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
-    supabase.from("posts").select("*").eq("id", id).maybeSingle().then(({ data }) => {
-      if (!data) { setMissing(true); return; }
-      setData({
-        id: data.id,
-        title: data.title,
-        slug: data.slug,
-        excerpt: data.excerpt ?? "",
-        content: data.content ?? "",
-        cover_image: data.cover_image ?? "",
-        category: data.category,
-        reading_time: data.reading_time,
-        published: data.published,
-        featured: data.featured,
+    supabase
+      .from("posts")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) {
+          setMissing(true);
+          return;
+        }
+        setData({
+          id: data.id,
+          title: data.title,
+          slug: data.slug,
+          excerpt: data.excerpt ?? "",
+          content: data.content ?? "",
+          cover_image: data.cover_image ?? "",
+          category: data.category,
+          reading_time: data.reading_time,
+          published: data.published,
+          featured: data.featured,
+        });
       });
-    });
   }, [id]);
 
   if (missing) return <p className="text-muted-foreground">Post não encontrado.</p>;
