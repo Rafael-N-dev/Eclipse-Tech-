@@ -9,8 +9,7 @@ export const Route = createFileRoute("/contato")({
       { title: "Contato — Eclipse Tech" },
       {
         name: "description",
-        content:
-          "Fale com a redação da Eclipse Tech: pautas, parcerias, anúncios e suporte.",
+        content: "Fale com a redação da Eclipse Tech: pautas, parcerias, anúncios e suporte.",
       },
       { property: "og:title", content: "Contato — Eclipse Tech" },
       {

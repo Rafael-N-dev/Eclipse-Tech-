@@ -35,7 +35,9 @@ function AdminPostsList() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function togglePublished(p: Row) {
     if (!isAdmin) return;
@@ -94,7 +96,9 @@ function AdminPostsList() {
                 <td className="p-3">
                   <div className="flex justify-end gap-2">
                     <Link to="/admin/edit/$id" params={{ id: p.id }}>
-                      <Button size="sm" variant="outline"><Pencil className="h-3 w-3" /></Button>
+                      <Button size="sm" variant="outline">
+                        <Pencil className="h-3 w-3" />
+                      </Button>
                     </Link>
                     <Button size="sm" variant="destructive" onClick={() => remove(p.id)}>
                       <Trash2 className="h-3 w-3" />
@@ -104,7 +108,11 @@ function AdminPostsList() {
               </tr>
             ))}
             {posts.length === 0 && (
-              <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum post ainda.</td></tr>
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  Nenhum post ainda.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
