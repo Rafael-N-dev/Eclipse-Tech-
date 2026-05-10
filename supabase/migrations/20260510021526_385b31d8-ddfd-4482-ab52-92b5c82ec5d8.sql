@@ -1,0 +1,1 @@
+drop policy if exists "Public read post covers" on storage.objects;
