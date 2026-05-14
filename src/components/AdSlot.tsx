@@ -1,32 +1,61 @@
+import { useEffect, useRef } from "react";
+
 interface AdSlotProps {
   variant?: "horizontal" | "in-feed" | "sidebar";
   label?: string;
+  /** AdSense ad slot ID (data-ad-slot). Falls back to a placeholder if omitted. */
+  slot?: string;
 }
 
+const ADSENSE_CLIENT = "ca-pub-4446431956171104";
+
 const sizes: Record<string, string> = {
-  horizontal: "h-24 sm:h-28",
-  "in-feed": "h-32 sm:h-36",
-  sidebar: "h-64",
+  horizontal: "min-h-[96px] sm:min-h-[112px]",
+  "in-feed": "min-h-[128px] sm:min-h-[144px]",
+  sidebar: "min-h-[256px]",
 };
 
-export function AdSlot({ variant = "horizontal", label = "Publicidade" }: AdSlotProps) {
+const formats: Record<string, { format: string; responsive: string }> = {
+  horizontal: { format: "auto", responsive: "true" },
+  "in-feed": { format: "fluid", responsive: "true" },
+  sidebar: { format: "auto", responsive: "true" },
+};
+
+export function AdSlot({ variant = "horizontal", label = "Publicidade", slot }: AdSlotProps) {
+  const ref = useRef<HTMLModElement>(null);
+  const pushed = useRef(false);
+
+  useEffect(() => {
+    if (pushed.current) return;
+    if (typeof window === "undefined") return;
+    try {
+      // @ts-expect-error - adsbygoogle is injected by the AdSense script
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      pushed.current = true;
+    } catch (e) {
+      // AdSense not yet loaded — will retry on next mount
+    }
+  }, []);
+
+  const { format, responsive } = formats[variant];
+
   return (
     <aside
       aria-label="Espaço publicitário"
-      className={`relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border/60 bg-surface/40 ${sizes[variant]}`}
+      className={`relative w-full overflow-hidden rounded-lg border border-dashed border-border/40 bg-surface/30 ${sizes[variant]}`}
     >
-      <div className="flex flex-col items-center gap-1 text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
-          {label}
-        </span>
-        <span className="text-xs text-muted-foreground/50">
-          Espaço reservado para Google AdSense
-        </span>
-      </div>
-      {/*
-        Para ativar o AdSense, substitua o conteúdo deste componente por:
-        <ins className="adsbygoogle" data-ad-client="ca-pub-XXXX" data-ad-slot="YYYY" ... />
-      */}
+      <span className="absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
+        {label}
+      </span>
+      <ins
+        ref={ref}
+        className="adsbygoogle"
+        style={{ display: "block", width: "100%", height: "100%" }}
+        data-ad-client={ADSENSE_CLIENT}
+        data-ad-slot={slot ?? "0000000000"}
+        data-ad-format={format}
+        data-full-width-responsive={responsive}
+      />
     </aside>
   );
 }
