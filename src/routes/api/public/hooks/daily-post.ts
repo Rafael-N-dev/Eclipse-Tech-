@@ -61,7 +61,14 @@ async function generatePost(category: { slug: string; label: string }) {
 
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new Error("No content from AI");
-  return JSON.parse(content) as {
+  // Sanitize: strip code fences and fix common bad escape sequences before JSON.parse
+  let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  try {
+    return JSON.parse(cleaned) as any;
+  } catch {
+    // Fallback: remove invalid backslash escapes (e.g. \x, \', stray \)
+    cleaned = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+    return JSON.parse(cleaned) as {
     title: string;
     excerpt: string;
     content: string;
