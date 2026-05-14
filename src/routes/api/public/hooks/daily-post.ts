@@ -61,20 +61,14 @@ async function generatePost(category: { slug: string; label: string }) {
 
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new Error("No content from AI");
-  // Sanitize: strip code fences and fix common bad escape sequences before JSON.parse
+  type PostJson = { title: string; excerpt: string; content: string; reading_time: number; image_prompt: string };
   let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   try {
-    return JSON.parse(cleaned) as any;
+    return JSON.parse(cleaned) as PostJson;
   } catch {
-    // Fallback: remove invalid backslash escapes (e.g. \x, \', stray \)
     cleaned = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
-    return JSON.parse(cleaned) as {
-    title: string;
-    excerpt: string;
-    content: string;
-    reading_time: number;
-    image_prompt: string;
-  };
+    return JSON.parse(cleaned) as PostJson;
+  }
 }
 
 async function generateCoverImage(prompt: string, slug: string): Promise<string | null> {
