@@ -44,11 +44,15 @@ async function aiChat(model: string, messages: any[], extra: Record<string, any>
   return res.json();
 }
 
-async function generatePost(category: { slug: string; label: string }) {
+async function generatePost(category: { slug: string; label: string }, recentTitles: string[]) {
   const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
 {"title": string (até 80 chars, chamativo, sem clickbait genérico), "excerpt": string (1-2 frases instigantes, até 160 chars), "content": string (markdown, 600-900 palavras, com 2-3 subtítulos ## e parágrafos curtos), "reading_time": number (3-7), "image_prompt": string (descrição em INGLÊS, vívida e cinematográfica, para gerar uma imagem de capa horizontal 16:9, sem texto na imagem)}`;
 
-  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema atual, curioso ou nostálgico dentro desse universo (pode ser uma série, tecnologia recente, banda lendária, filme cult, anime hypado, curiosidade científica ou um caso bizarro real). Tom humano, descontraído, com personalidade. Não inclua o título dentro do content. O image_prompt deve descrever uma capa visualmente impactante relacionada ao tema.`;
+  const avoidBlock = recentTitles.length
+    ? `\n\nIMPORTANTE: NÃO repita nem aborde de novo nenhum destes temas já publicados recentemente:\n- ${recentTitles.slice(0, 25).join("\n- ")}\nEscolha um tema/obra/pessoa/fato COMPLETAMENTE diferente.`
+    : "";
+
+  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema específico, atual, curioso ou nostálgico dentro desse universo (uma série, tecnologia recente, banda, filme cult, anime, curiosidade científica ou caso bizarro real). Varie bastante: a cada execução escolha algo bem diferente do anterior. Tom humano, descontraído, com personalidade. Não inclua o título dentro do content. O image_prompt deve descrever uma capa visualmente impactante relacionada ao tema.${avoidBlock}`;
 
   const json = await aiChat(
     "google/gemini-2.5-flash",
