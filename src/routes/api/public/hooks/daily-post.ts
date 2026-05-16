@@ -132,7 +132,14 @@ export const Route = createFileRoute("/api/public/hooks/daily-post")({
             CATEGORIES.find((c) => c.slug === preferred) ??
             CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
 
-          const post = await generatePost(category);
+          const { data: recent } = await supabaseAdmin
+            .from("posts")
+            .select("title")
+            .order("created_at", { ascending: false })
+            .limit(30);
+          const recentTitles = (recent ?? []).map((r) => r.title as string);
+
+          const post = await generatePost(category, recentTitles);
 
           const baseSlug = slugify(post.title) || `post-${Date.now()}`;
           const slug = `${baseSlug}-${Date.now().toString(36)}`;
