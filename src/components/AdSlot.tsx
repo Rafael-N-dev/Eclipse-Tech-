@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getConsent } from "@/components/CookieConsent";
 
 interface AdSlotProps {
   variant?: "horizontal" | "in-feed" | "sidebar";
   label?: string;
-  /** AdSense ad slot ID (data-ad-slot). Falls back to a placeholder if omitted. */
   slot?: string;
 }
 
@@ -22,20 +22,27 @@ const formats: Record<string, { format: string; responsive: string }> = {
 };
 
 export function AdSlot({ variant = "horizontal", label = "Publicidade", slot }: AdSlotProps) {
-  const ref = useRef<HTMLModElement>(null);
   const pushed = useRef(false);
+  const [consented, setConsented] = useState(false);
 
   useEffect(() => {
-    if (pushed.current) return;
-    if (typeof window === "undefined") return;
+    const sync = () => setConsented(getConsent() === "accepted");
+    sync();
+    const handler = () => sync();
+    window.addEventListener("cookie-consent-change", handler);
+    return () => window.removeEventListener("cookie-consent-change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!consented || pushed.current) return;
     try {
       // @ts-expect-error - adsbygoogle is injected by the AdSense script
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       pushed.current = true;
-    } catch (e) {
-      // AdSense not yet loaded — will retry on next mount
+    } catch {
+      // AdSense not ready yet
     }
-  }, []);
+  }, [consented]);
 
   const { format, responsive } = formats[variant];
 
@@ -47,15 +54,16 @@ export function AdSlot({ variant = "horizontal", label = "Publicidade", slot }: 
       <span className="absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
         {label}
       </span>
-      <ins
-        ref={ref}
-        className="adsbygoogle"
-        style={{ display: "block", width: "100%", height: "100%" }}
-        data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={slot ?? "0000000000"}
-        data-ad-format={format}
-        data-full-width-responsive={responsive}
-      />
+      {consented && (
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block", width: "100%", height: "100%" }}
+          data-ad-client={ADSENSE_CLIENT}
+          data-ad-slot={slot ?? "0000000000"}
+          data-ad-format={format}
+          data-full-width-responsive={responsive}
+        />
+      )}
     </aside>
   );
 }
