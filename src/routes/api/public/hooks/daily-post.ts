@@ -44,15 +44,39 @@ async function aiChat(model: string, messages: any[], extra: Record<string, any>
   return res.json();
 }
 
-async function generatePost(category: { slug: string; label: string }, recentTitles: string[]) {
-  const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
-{"title": string (até 80 chars, chamativo, sem clickbait genérico), "excerpt": string (1-2 frases instigantes, até 160 chars), "content": string (markdown, 600-900 palavras, com 2-3 subtítulos ## e parágrafos curtos), "reading_time": number (3-7), "image_prompt": string (descrição em INGLÊS, vívida e cinematográfica, para gerar uma imagem de capa horizontal 16:9, sem texto na imagem)}`;
+type PostJson = {
+  title: string;
+  excerpt: string;
+  content: string;
+  reading_time: number;
+  image_prompt: string;
+  entities: string[];
+};
 
-  const avoidBlock = recentTitles.length
-    ? `\n\nIMPORTANTE: NÃO repita nem aborde de novo nenhum destes temas já publicados recentemente:\n- ${recentTitles.slice(0, 25).join("\n- ")}\nEscolha um tema/obra/pessoa/fato COMPLETAMENTE diferente.`
+async function generatePost(
+  category: { slug: string; label: string },
+  recentTitles: string[],
+  bannedEntities: string[],
+) {
+  const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
+{"title": string (até 80 chars), "excerpt": string (até 160 chars), "content": string (markdown, 600-900 palavras, 2-3 subtítulos ##), "reading_time": number (3-7), "image_prompt": string (em INGLÊS, cinematográfico, 16:9, sem texto), "entities": string[] (3-6 palavras-chave em minúsculo: obras, pessoas, bandas, jogos, séries, filmes, tecnologias — ex: "slipknot", "the last of us", "iphone 17")}`;
+
+  const blocks: string[] = [];
+  if (bannedEntities.length) {
+    blocks.push(
+      `PROIBIDO escrever sobre qualquer uma destas entidades (já cobertas recentemente):\n- ${bannedEntities.slice(0, 60).join("\n- ")}`,
+    );
+  }
+  if (recentTitles.length) {
+    blocks.push(
+      `Títulos publicados recentemente (não repita o ângulo nem o tema):\n- ${recentTitles.slice(0, 20).join("\n- ")}`,
+    );
+  }
+  const avoidBlock = blocks.length
+    ? `\n\nIMPORTANTE:\n${blocks.join("\n\n")}\nEscolha um tema/obra/pessoa COMPLETAMENTE diferente.`
     : "";
 
-  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema específico, atual, curioso ou nostálgico dentro desse universo (uma série, tecnologia recente, banda, filme cult, anime, curiosidade científica ou caso bizarro real). Varie bastante: a cada execução escolha algo bem diferente do anterior. Tom humano, descontraído, com personalidade. Não inclua o título dentro do content. O image_prompt deve descrever uma capa visualmente impactante relacionada ao tema.${avoidBlock}`;
+  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema específico, atual, curioso ou nostálgico. Varie muito a cada execução. Tom humano, descontraído. Não inclua o título dentro do content. Preencha "entities" com as 3-6 palavras-chave centrais (nomes próprios em minúsculo).${avoidBlock}`;
 
   const json = await aiChat(
     "google/gemini-2.5-flash",
@@ -65,14 +89,18 @@ async function generatePost(category: { slug: string; label: string }, recentTit
 
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new Error("No content from AI");
-  type PostJson = { title: string; excerpt: string; content: string; reading_time: number; image_prompt: string };
   let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  let parsed: PostJson;
   try {
-    return JSON.parse(cleaned) as PostJson;
+    parsed = JSON.parse(cleaned) as PostJson;
   } catch {
     cleaned = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
-    return JSON.parse(cleaned) as PostJson;
+    parsed = JSON.parse(cleaned) as PostJson;
   }
+  parsed.entities = Array.isArray(parsed.entities)
+    ? parsed.entities.map((e) => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 8)
+    : [];
+  return parsed;
 }
 
 async function generateCoverImage(prompt: string, slug: string): Promise<string | null> {
@@ -128,38 +156,76 @@ export const Route = createFileRoute("/api/public/hooks/daily-post")({
             preferred = body?.category;
           } catch {}
 
-          const category =
-            CATEGORIES.find((c) => c.slug === preferred) ??
-            CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-
+          // Janela de análise: últimos 60 posts (qualquer origem, manual ou IA)
           const { data: recent } = await supabaseAdmin
             .from("posts")
-            .select("title")
+            .select("title, category, entities, created_at")
             .order("created_at", { ascending: false })
-            .limit(30);
-          const recentTitles = (recent ?? []).map((r) => r.title as string);
+            .limit(60);
+          const recentRows = (recent ?? []) as Array<{
+            title: string;
+            category: string;
+            entities: string[] | null;
+            created_at: string;
+          }>;
 
-          const post = await generatePost(category, recentTitles);
+          // Escolha de categoria: respeita preferência; senão pega a menos usada
+          // entre os últimos 10 posts (round-robin natural). Empate: aleatório.
+          let category: { slug: string; label: string };
+          const prefMatch = CATEGORIES.find((c) => c.slug === preferred);
+          if (prefMatch) {
+            category = prefMatch;
+          } else {
+            const last10 = recentRows.slice(0, 10).map((r) => r.category);
+            const scored = CATEGORIES.map((c) => ({
+              c,
+              count: last10.filter((x) => x === c.slug).length,
+              jitter: Math.random(),
+            })).sort((a, b) => a.count - b.count || a.jitter - b.jitter);
+            category = scored[0].c;
+          }
 
-          const baseSlug = slugify(post.title) || `post-${Date.now()}`;
+          const recentTitles = recentRows.map((r) => r.title);
+          // Entidades banidas: tudo que apareceu nos últimos 30 dias.
+          const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const bannedEntities = Array.from(
+            new Set(
+              recentRows
+                .filter((r) => new Date(r.created_at).getTime() >= cutoff)
+                .flatMap((r) => r.entities ?? [])
+                .map((e) => e.toLowerCase().trim())
+                .filter(Boolean),
+            ),
+          );
+
+          const post = await generatePost(category, recentTitles, bannedEntities);
+
+          // Salvaguarda: se a IA insistir numa entidade banida, rejeita e tenta de novo uma vez.
+          const collides = post.entities.some((e) => bannedEntities.includes(e));
+          const final = collides
+            ? await generatePost(category, recentTitles, [...bannedEntities, ...post.entities])
+            : post;
+
+          const baseSlug = slugify(final.title) || `post-${Date.now()}`;
           const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
-          const coverUrl = await generateCoverImage(post.image_prompt, baseSlug);
+          const coverUrl = await generateCoverImage(final.image_prompt, baseSlug);
 
           const { data, error } = await supabaseAdmin
             .from("posts")
             .insert({
-              title: post.title.slice(0, 200),
+              title: final.title.slice(0, 200),
               slug,
-              excerpt: post.excerpt?.slice(0, 300) ?? null,
-              content: post.content,
+              excerpt: final.excerpt?.slice(0, 300) ?? null,
+              content: final.content,
               category: category.slug,
               cover_image: coverUrl,
-              reading_time: Math.max(2, Math.min(15, post.reading_time || 4)),
+              reading_time: Math.max(2, Math.min(15, final.reading_time || 4)),
+              entities: final.entities,
               published: true,
               featured: false,
             })
-            .select("id, slug, title, category, cover_image")
+            .select("id, slug, title, category, cover_image, entities")
             .single();
 
           if (error) throw error;
