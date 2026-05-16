@@ -21,6 +21,7 @@ export type Database = {
           cover_image: string | null
           created_at: string
           dislikes: number
+          entities: string[]
           excerpt: string | null
           featured: boolean
           id: string
@@ -38,6 +39,7 @@ export type Database = {
           cover_image?: string | null
           created_at?: string
           dislikes?: number
+          entities?: string[]
           excerpt?: string | null
           featured?: boolean
           id?: string
@@ -55,6 +57,7 @@ export type Database = {
           cover_image?: string | null
           created_at?: string
           dislikes?: number
+          entities?: string[]
           excerpt?: string | null
           featured?: boolean
           id?: string
