@@ -44,15 +44,39 @@ async function aiChat(model: string, messages: any[], extra: Record<string, any>
   return res.json();
 }
 
-async function generatePost(category: { slug: string; label: string }, recentTitles: string[]) {
-  const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
-{"title": string (até 80 chars, chamativo, sem clickbait genérico), "excerpt": string (1-2 frases instigantes, até 160 chars), "content": string (markdown, 600-900 palavras, com 2-3 subtítulos ## e parágrafos curtos), "reading_time": number (3-7), "image_prompt": string (descrição em INGLÊS, vívida e cinematográfica, para gerar uma imagem de capa horizontal 16:9, sem texto na imagem)}`;
+type PostJson = {
+  title: string;
+  excerpt: string;
+  content: string;
+  reading_time: number;
+  image_prompt: string;
+  entities: string[];
+};
 
-  const avoidBlock = recentTitles.length
-    ? `\n\nIMPORTANTE: NÃO repita nem aborde de novo nenhum destes temas já publicados recentemente:\n- ${recentTitles.slice(0, 25).join("\n- ")}\nEscolha um tema/obra/pessoa/fato COMPLETAMENTE diferente.`
+async function generatePost(
+  category: { slug: string; label: string },
+  recentTitles: string[],
+  bannedEntities: string[],
+) {
+  const systemPrompt = `Você é um redator de blog em português brasileiro, descontraído, com voz humana e cheia de personalidade. Escreva como se estivesse batendo papo com um amigo nerd: leve humor, opiniões, referências da cultura pop, parágrafos curtos, sem clichês corporativos. Responda APENAS com JSON válido (sem markdown, sem cercas) no formato:
+{"title": string (até 80 chars), "excerpt": string (até 160 chars), "content": string (markdown, 600-900 palavras, 2-3 subtítulos ##), "reading_time": number (3-7), "image_prompt": string (em INGLÊS, cinematográfico, 16:9, sem texto), "entities": string[] (3-6 palavras-chave em minúsculo: obras, pessoas, bandas, jogos, séries, filmes, tecnologias — ex: "slipknot", "the last of us", "iphone 17")}`;
+
+  const blocks: string[] = [];
+  if (bannedEntities.length) {
+    blocks.push(
+      `PROIBIDO escrever sobre qualquer uma destas entidades (já cobertas recentemente):\n- ${bannedEntities.slice(0, 60).join("\n- ")}`,
+    );
+  }
+  if (recentTitles.length) {
+    blocks.push(
+      `Títulos publicados recentemente (não repita o ângulo nem o tema):\n- ${recentTitles.slice(0, 20).join("\n- ")}`,
+    );
+  }
+  const avoidBlock = blocks.length
+    ? `\n\nIMPORTANTE:\n${blocks.join("\n\n")}\nEscolha um tema/obra/pessoa COMPLETAMENTE diferente.`
     : "";
 
-  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema específico, atual, curioso ou nostálgico dentro desse universo (uma série, tecnologia recente, banda, filme cult, anime, curiosidade científica ou caso bizarro real). Varie bastante: a cada execução escolha algo bem diferente do anterior. Tom humano, descontraído, com personalidade. Não inclua o título dentro do content. O image_prompt deve descrever uma capa visualmente impactante relacionada ao tema.${avoidBlock}`;
+  const userPrompt = `Crie um post inédito da categoria "${category.label}". Escolha um tema específico, atual, curioso ou nostálgico. Varie muito a cada execução. Tom humano, descontraído. Não inclua o título dentro do content. Preencha "entities" com as 3-6 palavras-chave centrais (nomes próprios em minúsculo).${avoidBlock}`;
 
   const json = await aiChat(
     "google/gemini-2.5-flash",
@@ -65,14 +89,18 @@ async function generatePost(category: { slug: string; label: string }, recentTit
 
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new Error("No content from AI");
-  type PostJson = { title: string; excerpt: string; content: string; reading_time: number; image_prompt: string };
   let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  let parsed: PostJson;
   try {
-    return JSON.parse(cleaned) as PostJson;
+    parsed = JSON.parse(cleaned) as PostJson;
   } catch {
     cleaned = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
-    return JSON.parse(cleaned) as PostJson;
+    parsed = JSON.parse(cleaned) as PostJson;
   }
+  parsed.entities = Array.isArray(parsed.entities)
+    ? parsed.entities.map((e) => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 8)
+    : [];
+  return parsed;
 }
 
 async function generateCoverImage(prompt: string, slug: string): Promise<string | null> {
